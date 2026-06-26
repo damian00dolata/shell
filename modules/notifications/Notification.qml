@@ -159,14 +159,44 @@ StyledRect {
                         active: root.hasAppIcon
 
                         anchors.centerIn: parent
-
                         width: Math.round(parent.width * 0.6)
                         height: Math.round(parent.width * 0.6)
 
-                        sourceComponent: ColouredIcon {
+                        sourceComponent: (
+                            root.modelData.appIcon.startsWith("file:")
+                            || root.modelData.appIcon.startsWith("/")
+                        ) ? fileAppIconComponent : themedAppIconComponent
+                    }
+
+                    Component {
+                        id: fileAppIconComponent
+
+                        Image {
                             anchors.fill: parent
+
+                            source: Qt.resolvedUrl(root.modelData.appIcon)
+                            fillMode: Image.PreserveAspectFit
+
+                            cache: false
+                            asynchronous: true
+                            smooth: true
+                            mipmap: true
+                        }
+                    }
+
+                    Component {
+                        id: themedAppIconComponent
+
+                        ColouredIcon {
+                            anchors.fill: parent
+
                             source: Quickshell.iconPath(root.modelData.appIcon)
-                            colour: root.modelData.urgency === NotificationUrgency.Critical ? Colours.palette.m3onError : root.modelData.urgency === NotificationUrgency.Low ? Colours.palette.m3onSurface : Colours.palette.m3onSecondaryContainer
+                            colour: root.modelData.urgency === NotificationUrgency.Critical
+                                ? Colours.palette.m3onError
+                                : root.modelData.urgency === NotificationUrgency.Low
+                                    ? Colours.palette.m3onSurface
+                                    : Colours.palette.m3onSecondaryContainer
+
                             layer.enabled: root.modelData.appIcon.endsWith("symbolic")
                         }
                     }
