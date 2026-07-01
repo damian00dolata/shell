@@ -364,29 +364,77 @@ git commit -m "feat(launcher): add EDP resolution actions"
 
 ## Hyprland and global shortcuts
 
-Check registered global shortcuts:
+## Hyprland integration
+
+The user's primary Hyprland config lives at:
+
+```text
+~/.config/hypr/hyprland.conf
+```
+
+Use this file when a Caelestia feature needs compositor integration, especially:
+
+- keybinds for Caelestia global shortcuts;
+- launcher, sidebar, dashboard, session menu, screenshot, lock, and media binds;
+- autostart of `caelestia shell -d`;
+- monitor and mirror behavior that affects Caelestia UI or helper actions;
+- layer rules only when Caelestia layers need compositor-side treatment.
+
+Do not treat Hyprland configuration as part of the Caelestia source repository. It belongs to the user's dotfiles/system config, not to the Caelestia fork.
+
+For source changes, stay in:
+
+```text
+~/.config/quickshell/caelestia
+```
+
+For compositor/user-session changes, inspect or edit:
+
+```text
+~/.config/hypr/hyprland.conf
+~/.config/hypr/hyprpaper.conf
+~/.config/hypr/Scripts/
+~/.local/bin/
+~/.config/systemd/user/
+```
+
+Common checks:
 
 ```sh
+hyprctl configerrors
+hyprctl reload
+hyprctl binds
 hyprctl globalshortcuts
+hyprctl layers
+hyprctl monitors all
 ```
 
-Trigger one manually:
+Known local Caelestia start pattern in Hyprland:
 
-```sh
-hyprctl dispatch global caelestia:showall
-hyprctl dispatch global caelestia:sidebar
-hyprctl dispatch global caelestia:session
+```ini
+exec-once = env QT_QPA_PLATFORMTHEME=qt6ct caelestia shell -d
 ```
 
-In this setup, `caelestia:launcher` may be designed around the actual Super key press plus `launcherInterrupt`. If direct dispatch returns `ok` but shows nothing, test official-style binds instead of assuming the shortcut is broken.
-
-Typical launcher keybind pattern:
+Known useful Caelestia global shortcut pattern:
 
 ```ini
 bindi = SUPER, SUPER_L, global, caelestia:launcher
 bindi = SUPER, SUPER_R, global, caelestia:launcher
 bindin = SUPER, catchall, global, caelestia:launcherInterrupt
+bind = SUPER, N, global, caelestia:sidebar
+bind = CTRL ALT, DELETE, global, caelestia:session
 ```
+
+When modifying Hyprland binds, preserve the user's existing workflows unless explicitly asked to replace them:
+
+- `SUPER+N` for Caelestia sidebar;
+- `SUPER+R` / `SUPER+Down` may still be Wofi fallback launchers;
+- `SUPER+Up` is a custom active-window switcher;
+- `SUPER+L` uses `hyprlock` and should not be replaced with Caelestia lock without confirmation;
+- `SUPER+SHIFT+S` is scratchpad-related and should not be reused for screenshots;
+- hyprsplit workspace binds use `split:workspace` and `split:movetoworkspacesilent`.
+
+When a Caelestia change requires a Hyprland bind, propose the exact `bind`, `bindl`, `bindi`, or `bindin` line and tell the user that it belongs in `~/.config/hypr/hyprland.conf`, not in the Caelestia repo.
 
 ## Project-specific notes
 
