@@ -49,7 +49,7 @@ StyledListView {
         const text = search.text;
         const prefix = GlobalConfig.launcher.actionPrefix;
         if (text.startsWith(prefix)) {
-            for (const action of ["calc", "scheme", "variant"])
+            for (const action of ["calc", "scheme", "variant", "edp"])
                 if (text.startsWith(`${prefix}${action} `))
                     return action;
 
@@ -103,6 +103,14 @@ StyledListView {
             PropertyChanges {
                 model.values: M3Variants.query(search.text)
                 root.delegate: variantItem
+            }
+        },
+        State {
+            name: "edp"
+
+            PropertyChanges {
+                model.values: EdpModes.queryEdp(search.text)
+                root.delegate: actionItem
             }
         }
     ]

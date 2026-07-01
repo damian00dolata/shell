@@ -68,6 +68,12 @@ class LauncherConfig : public ConfigObject {
                 { u"command"_s, QStringList{ u"autocomplete"_s, u"variant"_s } },
             }),
             vmap({
+                { u"name"_s, u"EDP"_s },
+                { u"icon"_s, u"display_settings"_s },
+                { u"description"_s, u"Zmień rozdzielczość eDP/mirror"_s },
+                { u"command"_s, QStringList{ u"autocomplete"_s, u"edp"_s } },
+            }),
+            vmap({
                 { u"name"_s, u"Random"_s },
                 { u"icon"_s, u"casino"_s },
                 { u"description"_s, u"Switch to a random wallpaper"_s },
