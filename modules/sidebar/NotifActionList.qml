@@ -172,7 +172,7 @@ Item {
 
                         IconImage {
                             asynchronous: true
-                            source: Quickshell.iconPath(action.modelData.identifier)
+                            source: Quickshell.iconPath(action.modelData.identifier, "image-missing")
                         }
                     }
 

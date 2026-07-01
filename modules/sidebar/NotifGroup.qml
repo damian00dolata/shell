@@ -23,6 +23,7 @@ StyledRect {
     readonly property int notifCount: activeNotifs.length
     readonly property string image: activeNotifs.find(n => n.image.length > 0)?.image ?? ""
     readonly property string appIcon: activeNotifs.find(n => n.appIcon.length > 0)?.appIcon ?? ""
+    readonly property bool isFileAppIcon: root.appIcon.startsWith("file:") || root.appIcon.startsWith("/")
     readonly property int urgency: {
         if (activeNotifs.find(n => n.urgency === NotificationUrgency.Critical))
             return NotificationUrgency.Critical;
@@ -97,11 +98,26 @@ StyledRect {
             }
 
             Component {
+                id: fileAppIconComp
+
+                Image {
+                    width: Math.round(TokenConfig.sizes.notifs.image * 0.6)
+                    height: width
+                    source: Qt.resolvedUrl(root.appIcon)
+                    fillMode: Image.PreserveAspectFit
+                    cache: false
+                    asynchronous: true
+                    smooth: true
+                    mipmap: true
+                }
+            }
+
+            Component {
                 id: appIconComp
 
                 ColouredIcon {
                     implicitSize: Math.round(TokenConfig.sizes.notifs.image * 0.6)
-                    source: Quickshell.iconPath(root.appIcon)
+                    source: Quickshell.iconPath(root.appIcon, "image-missing")
                     colour: root.urgency === NotificationUrgency.Critical ? Colours.palette.m3onError : root.urgency === NotificationUrgency.Low ? Colours.palette.m3onSurface : Colours.palette.m3onSecondaryContainer
                     layer.enabled: root.appIcon.endsWith("symbolic")
                 }
@@ -126,7 +142,7 @@ StyledRect {
                     asynchronous: true
                     anchors.centerIn: parent
                     anchors.verticalCenterOffset: sourceComponent === materialIconComp ? 1 : 0
-                    sourceComponent: root.image ? imageComp : root.appIcon ? appIconComp : materialIconComp
+                    sourceComponent: root.image ? imageComp : root.appIcon ? (root.isFileAppIcon ? fileAppIconComp : appIconComp) : materialIconComp
                 }
             }
 
@@ -143,10 +159,24 @@ StyledRect {
                     color: root.urgency === NotificationUrgency.Critical ? Colours.palette.m3error : root.urgency === NotificationUrgency.Low ? Colours.palette.m3surfaceContainerHigh : Colours.palette.m3secondaryContainer
                     radius: Tokens.rounding.full
 
+                    Image {
+                        anchors.centerIn: parent
+                        visible: root.isFileAppIcon
+                        width: Math.round(Tokens.sizes.notifs.badge * 0.6)
+                        height: width
+                        source: root.isFileAppIcon ? Qt.resolvedUrl(root.appIcon) : ""
+                        fillMode: Image.PreserveAspectFit
+                        cache: false
+                        asynchronous: true
+                        smooth: true
+                        mipmap: true
+                    }
+
                     ColouredIcon {
                         anchors.centerIn: parent
+                        visible: !root.isFileAppIcon
                         implicitSize: Math.round(Tokens.sizes.notifs.badge * 0.6)
-                        source: Quickshell.iconPath(root.appIcon)
+                        source: root.isFileAppIcon ? "" : Quickshell.iconPath(root.appIcon, "image-missing")
                         colour: root.urgency === NotificationUrgency.Critical ? Colours.palette.m3onError : root.urgency === NotificationUrgency.Low ? Colours.palette.m3onSurface : Colours.palette.m3onSecondaryContainer
                         layer.enabled: root.appIcon.endsWith("symbolic")
                     }

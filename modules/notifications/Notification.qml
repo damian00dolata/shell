@@ -190,7 +190,7 @@ StyledRect {
                         ColouredIcon {
                             anchors.fill: parent
 
-                            source: Quickshell.iconPath(root.modelData.appIcon)
+                            source: Quickshell.iconPath(root.modelData.appIcon, "image-missing")
                             colour: root.modelData.urgency === NotificationUrgency.Critical
                                 ? Colours.palette.m3onError
                                 : root.modelData.urgency === NotificationUrgency.Low

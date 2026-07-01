@@ -41,6 +41,7 @@ StyledRect {
     readonly property string image: props.img
     readonly property string appIcon: props.icon
     readonly property string urgency: props.urgency
+    readonly property bool isFileAppIcon: root.appIcon.startsWith("file:") || root.appIcon.startsWith("/")
 
     property bool expanded
 
@@ -85,11 +86,26 @@ StyledRect {
             }
 
             Component {
+                id: fileAppIconComp
+
+                Image {
+                    width: Math.round(TokenConfig.sizes.notifs.image * 0.6)
+                    height: width
+                    source: Qt.resolvedUrl(root.appIcon)
+                    fillMode: Image.PreserveAspectFit
+                    cache: false
+                    asynchronous: true
+                    smooth: true
+                    mipmap: true
+                }
+            }
+
+            Component {
                 id: appIconComp
 
                 ColouredIcon {
                     implicitSize: Math.round(TokenConfig.sizes.notifs.image * 0.6)
-                    source: Quickshell.iconPath(root.appIcon)
+                    source: Quickshell.iconPath(root.appIcon, "image-missing")
                     colour: root.urgency === "critical" ? Colours.palette.m3onError : root.urgency === "low" ? Colours.palette.m3onSurface : Colours.palette.m3onSecondaryContainer
                     layer.enabled: root.appIcon.endsWith("symbolic")
                 }
@@ -113,7 +129,7 @@ StyledRect {
                 Loader {
                     asynchronous: true
                     anchors.centerIn: parent
-                    sourceComponent: root.image ? imageComp : root.appIcon ? appIconComp : materialIconComp
+                    sourceComponent: root.image ? imageComp : root.appIcon ? (root.isFileAppIcon ? fileAppIconComp : appIconComp) : materialIconComp
                 }
             }
 
@@ -130,10 +146,24 @@ StyledRect {
                     color: root.urgency === "critical" ? Colours.palette.m3error : root.urgency === "low" ? Colours.palette.m3surfaceContainerHighest : Colours.palette.m3secondaryContainer
                     radius: Tokens.rounding.full
 
+                    Image {
+                        anchors.centerIn: parent
+                        visible: root.isFileAppIcon
+                        width: Math.round(Tokens.sizes.notifs.badge * 0.6)
+                        height: width
+                        source: root.isFileAppIcon ? Qt.resolvedUrl(root.appIcon) : ""
+                        fillMode: Image.PreserveAspectFit
+                        cache: false
+                        asynchronous: true
+                        smooth: true
+                        mipmap: true
+                    }
+
                     ColouredIcon {
                         anchors.centerIn: parent
+                        visible: !root.isFileAppIcon
                         implicitSize: Math.round(Tokens.sizes.notifs.badge * 0.6)
-                        source: Quickshell.iconPath(root.appIcon)
+                        source: root.isFileAppIcon ? "" : Quickshell.iconPath(root.appIcon, "image-missing")
                         colour: root.urgency === "critical" ? Colours.palette.m3onError : root.urgency === "low" ? Colours.palette.m3onSurface : Colours.palette.m3onSecondaryContainer
                         layer.enabled: root.appIcon.endsWith("symbolic")
                     }
