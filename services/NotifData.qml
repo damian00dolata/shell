@@ -109,6 +109,56 @@ QtObject {
         }
     }
 
+    readonly property LazyLoader dummyAppIconLoader: LazyLoader {
+        active: false
+
+        // qmllint disable uncreatable-type
+        PanelWindow {
+            // qmllint enable uncreatable-type
+            implicitWidth: TokenConfig.sizes.notifs.image
+            implicitHeight: TokenConfig.sizes.notifs.image
+            color: "transparent"
+            mask: Region {}
+
+            Image {
+                function tryCache(): void {
+                    if (status !== Image.Ready || width != TokenConfig.sizes.notifs.image || height != TokenConfig.sizes.notifs.image)
+                        return;
+
+                    const cacheKey = notif.appName + notif.id + notif.appIcon;
+                    let h1 = 0xdeadbeef, h2 = 0x41c6ce57, ch;
+                    for (let i = 0; i < cacheKey.length; i++) {
+                        ch = cacheKey.charCodeAt(i);
+                        h1 = Math.imul(h1 ^ ch, 2654435761);
+                        h2 = Math.imul(h2 ^ ch, 1597334677);
+                    }
+                    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507);
+                    h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+                    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507);
+                    h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+                    const hash = (h2 >>> 0).toString(16).padStart(8, 0) + (h1 >>> 0).toString(16).padStart(8, 0);
+
+                    const cache = `${Paths.notifimagecache}/${hash}.png`;
+                    CUtils.saveItem(this, Qt.resolvedUrl(cache), () => {
+                        notif.appIcon = cache;
+                        notif.dummyAppIconLoader.active = false;
+                    });
+                }
+
+                anchors.fill: parent
+                source: Qt.resolvedUrl(notif.appIcon)
+                fillMode: Image.PreserveAspectFit
+                cache: false
+                asynchronous: true
+                opacity: 0
+
+                onStatusChanged: tryCache()
+                onWidthChanged: tryCache()
+                onHeightChanged: tryCache()
+            }
+        }
+    }
+
     readonly property Connections conn: Connections {
         function onClosed(): void {
             notif.close();
@@ -124,6 +174,7 @@ QtObject {
 
         function onAppIconChanged(): void {
             notif.appIcon = notif.notification.appIcon;
+            notif.maybeTriggerDummyAppIconLoader();
         }
 
         function onAppNameChanged(): void {
@@ -193,8 +244,24 @@ QtObject {
     }
 
     function maybeTriggerDummyImageLoader(): void {
+        // Chromium/Brave deliver the badge image as image://icon//tmp/.../icon.png,
+        // i.e. a filesystem path wrongly wrapped in the icon-theme provider. Unwrap
+        // it to a file URL so it can be cached before the temp dir is removed.
+        if (image.startsWith("image://icon//"))
+            image = "file://" + image.slice("image://icon/".length);
+
         if (image && !image.startsWith("image://icon/") && !image.startsWith(Paths.notifimagecache))
             dummyImageLoader.active = true;
+    }
+
+    function maybeTriggerDummyAppIconLoader(): void {
+        // Chromium/Brave supply the app icon as a file in a temp dir that is deleted
+        // shortly after; cache it while it still exists so persisted notifications
+        // keep a valid icon once the temp dir is gone. Themed icon names (e.g.
+        // "org.mozilla.Thunderbird") are not file paths and resolve via the icon
+        // theme, so they are left untouched.
+        if ((appIcon.startsWith("file:") || appIcon.startsWith("/")) && !appIcon.startsWith(Paths.notifimagecache) && !appIcon.startsWith(`file://${Paths.notifimagecache}`))
+            dummyAppIconLoader.active = true;
     }
 
     function lock(item: Item): void {
@@ -227,6 +294,7 @@ QtObject {
         appName = notification.appName;
         image = notification.image;
         maybeTriggerDummyImageLoader();
+        maybeTriggerDummyAppIconLoader();
         expireTimeout = notification.expireTimeout;
         hints = notification.hints;
         urgency = notification.urgency;
